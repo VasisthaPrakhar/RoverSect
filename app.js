@@ -2,6 +2,8 @@ const express = require('express');
 const path = require('path');
 const mongoose = require('mongoose');
 const ejsMate =  require('ejs-mate');
+const catchAsync = require('./utils/catchAsync');
+
 const methodOverride = require('method-override');
 const Campground = require('./models/campground');
 
@@ -48,11 +50,12 @@ app.get('/campgrounds/new', (req, res) => {
     res.render('campgrounds/new');
 })
 
-app.post('/campgrounds', async (req, res) => {
-    const campground = new Campground(req.body.campground);
-    await campground.save();
-    res.redirect(`/campgrounds/${campground._id}`)
-})
+app.post('/campgrounds', catchAsync(async (req, res, next) => {
+
+        const campground = new Campground(req.body.campground);
+        await campground.save();
+        res.redirect(`/campgrounds/${campground._id}`)
+}))
 
 app.get('/campgrounds/:id', async (req, res) => {
     const campground = await Campground.findById(req.params.id)
@@ -68,12 +71,16 @@ app.put('/campgrounds/:id', async (req, res) => {
     const {id} = req.params;
   const campground = await Campground.findByIdAndUpdate(id, { ...req.body.campground});
     res.redirect(`/campgrounds/${campground._id}`)
-})
+});
 
 app.delete('/campgrounds/:id', async (req, res) => {
     const {id} = req.params;
     await Campground.findByIdAndDelete(id);
     res.redirect('/campgrounds');
+});
+
+app.use((err, req, res, next) => {
+   res.send('Oh boy, Something went Wrong!!!')
 })
 
 app.listen(3000, () => {
